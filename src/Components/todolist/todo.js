@@ -9,6 +9,7 @@ export const Todo = () => {
   const [todovalue, settodovalue] = useState("");
   const [listdata, setlistdata] = useState([]);
   const [username, setusername] = useState("");
+  const [isstart, setisstart] = useState(false);
 
   useEffect(() => {
     let token = localStorage.getItem("token");
@@ -24,7 +25,8 @@ export const Todo = () => {
   }, [listdata]);
 
   const HandleAdd = () => {
-    const token = localStorage.getItem("token");
+    if(!isstart){
+      const token = localStorage.getItem("token");
     axios({
       method: "POST",
       url: "https://mern-todo-list-0.herokuapp.com/post",
@@ -40,6 +42,12 @@ export const Todo = () => {
         window.location.reload(false);
       })
       .catch((err) => alert(err.data));
+      
+    }
+    else{
+      alert("Please finish the  task that you have started before adding other")
+    }
+    
   };
   const HandleLogout = () => {
     localStorage.removeItem("token");
@@ -103,29 +111,34 @@ export const Todo = () => {
 
       <div className="wrapper">
         <table>
-          <thead> 
-          <tr>
-            <th>Activity</th>
-            <th>Status</th>
-            <th>Time-taken</th>
-            <th>Action</th>
-          </tr>
+          <thead>
+            <tr>
+              <th>Activity</th>
+              <th>Status</th>
+              <th>Time-taken</th>
+              <th>Action</th>
+            </tr>
           </thead>
-          <tbody> 
-          {listdata.length > 0 &&
-            listdata.map((item) => {
-              return (
-                <tr>
-                  <td>{item.activity}</td>
-                  <td>{item.status}</td>
-                  <td>{item.timeTaken}</td>
-                  <td>
-                    <TimerBtn id={"Buttons"} item={item}></TimerBtn>
-                  </td>
-                </tr>
-              );
-            })}
-            </tbody>
+          <tbody>
+            {listdata.length > 0 &&
+              listdata.map((item) => {
+                return (
+                  <tr>
+                    <td>{item.activity}</td>
+                    <td>{item.status}</td>
+                    <td>{item.timeTaken}</td>
+                    <td>
+                      <TimerBtn
+                        id={"Buttons"}
+                        item={item}
+                        isstart={isstart}
+                        setisstart={setisstart}
+                      ></TimerBtn>
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
         </table>
       </div>
     </>
@@ -135,7 +148,9 @@ export const Todo = () => {
 function TimerBtn(props) {
   const [timerOn, setTimerOn] = useState(false);
   const [time, setTime] = useState(0);
+  const [ended,setended]=useState(false);
   const HandleEnd = (e) => {
+    setended(true)
     let token = localStorage.getItem("token");
     let finaltime =
       ("0" + Math.floor((time / 3600000) % 24)).slice(-2) +
@@ -175,13 +190,28 @@ function TimerBtn(props) {
         <button
           className="custom-btn btn-16"
           id={props.item._id}
-          onClick={() => setTimerOn(true)}
+          onClick={() => {
+            if (!ended) {
+              if (!props.isstart) {
+                setTimerOn(true);
+                props.setisstart(true);
+              } else {
+                alert("Please End or Pause the existing task First");
+              }
+            }
+          }}
         >
           Start
         </button>
       )}
       {timerOn && (
-        <button className="custom-btn btn-16" onClick={() => setTimerOn(false)}>
+        <button
+          className="custom-btn btn-16"
+          onClick={() => {
+            setTimerOn(false);
+            props.setisstart(false);
+          }}
+        >
           Pause
         </button>
       )}
@@ -195,7 +225,17 @@ function TimerBtn(props) {
         </button>
       )}
       {!timerOn && time > 0 && (
-        <button className="custom-btn btn-16" onClick={() => setTimerOn(true)}>
+        <button
+          className="custom-btn btn-16"
+          onClick={() => {
+            if (!props.isstart) {
+              setTimerOn(true);
+              props.setisstart(true);
+            } else {
+              alert("Please End or Pause the existing task First");
+            }
+          }}
+        >
           Resume
         </button>
       )}
